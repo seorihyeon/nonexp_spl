@@ -4,7 +4,13 @@ import os
 import random
 import math
 import copy
-    
+
+class NumpyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return json.JSONEncoder.default(self, obj)
+
 class linedataset():
     def __init__(self, data, validation_rate = 0.05):
         self.data = data
@@ -57,12 +63,11 @@ class linedataset():
         
 def weibull_mean(lamb, k):
     return lamb*math.gamma(1+(1/k))
-
 def weibull_var(lamb, k):
     return pow(lamb,2)*(math.gamma(1+(2/k))-pow(math.gamma(1+(1/k)),2))
 
-def load_data_from_csv(data, m_num, label, mode = 0):
-    folder_path = data + "/" + str(m_num) + "m/data"
+def load_data_from_csv(path, m_num, label, mode = 0):
+    folder_path = path + "/" + str(m_num) + "m/data"
     result = {}
     file_path = os.path.join(folder_path, "xdata" + "_" + label + ".csv")
     _input = np.genfromtxt(file_path, delimiter = ",")
@@ -87,18 +92,3 @@ def stack_data(data, height):
             tmp[j,:] = line
         stacked_data[i,:,:] = tmp
     return stacked_data
-
-def get_parameter_from_json(file_name):
-    with open(file_name, "r") as json_file:
-        json_data = json.load(json_file)
-        machine_number = json_data['M']
-        X_input = json_data["m1"]["up"] + json_data["m1"]["down"]
-        for i in range(2,machine_number+1):
-            if machine_number == 2:
-                X_input = X_input + [json_data["N"]]
-            else:    
-                X_input = X_input + [json_data["N"][i-2]]
-            machine = "m" + str(i)
-            X_input = X_input + json_data[machine]["up"] + json_data[machine]["down"]
-
-    return np.array(X_input), machine_number
